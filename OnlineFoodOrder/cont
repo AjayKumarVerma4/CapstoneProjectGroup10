@@ -1,0 +1,351 @@
+package com.commerce.backend.api;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.commerce.backend.constant.Appconstants;
+import com.commerce.backend.dto.CartDTO;
+import com.commerce.backend.model.Cart;
+import com.commerce.backend.model.CartItem;
+import com.commerce.backend.model.City;
+import com.commerce.backend.model.DataTableParamModel;
+import com.commerce.backend.model.Product;
+import com.commerce.backend.model.ProductCityDetails;
+import com.commerce.backend.model.ProductSizeDetail;
+import com.commerce.backend.model.ProductSizeItem;
+import com.commerce.backend.model.User;
+import com.commerce.backend.service.CartItemService;
+import com.commerce.backend.service.CartService;
+import com.commerce.backend.service.ProductCityDetailsService;
+import com.commerce.backend.service.ProductDiscountDetailsService;
+import com.commerce.backend.service.ProductService;
+import com.commerce.backend.service.ProductSizeDetailService;
+import com.commerce.backend.service.ProductSizeItemService;
+
+@RestController
+@RequestMapping(value = Appconstants.CART_BASEURL)
+public class CartController {
+
+	private final Logger log = LoggerFactory.getLogger(CartController.class);
+
+	@Autowired
+	CartItemService cartItemService;
+
+	@Autowired
+	CartService cartService;
+
+	@Autowired
+	ProductCityDetailsService productCityDetailsService;
+
+	@Autowired
+	ProductSizeItemService productSizeItemService;
+
+	@Autowired
+	private ProductService productService;
+
+	@Autowired
+	private ProductSizeDetailService productSizeService;
+
+	@Autowired
+	ProductDiscountDetailsService discountService;
+
+	@RequestMapping(value = "/addtocart/{cityId}", method = RequestMethod.POST)
+	public ResponseEntity<Map<String, Object>> addToCart(@RequestBody Cart cart, @PathVariable("cityId") Long cityId,
+			HttpServletRequest request, HttpServletResponse response) {
+		log.info("Start of method addToCart");
+		Map<String, Object> map = new HashMap<String, Object>();
+		double totalPrice = 0.0;
+		Double cartTotalAmount = 0.0;
+		LocalDateTime createdOn = LocalDateTime.now();
+		Cart cartData = new Cart();
+		CartItem cartItemObj = null;
+		DataTableParamModel param = new DataTableParamModel();
+		boolean sameVendor = true;
+		try {
+			cartData = cartService.getCartByUser(cart.getCartUser().getUserId(), cityId);
+
+			City city = new City(cityId);
+			if (cartData != null) {
+				cartData.setCreatedOn(createdOn);
+				cartService.saveOrUpdate(cartData);
+				for (CartItem cartItem : cart.getCartItems()) {
+					Product cartProduct = productService.getObject(cartItem.getCartProduct().getId());
+					if (cartData.getCartItems().stream().anyMatch(existItem -> !cartProduct.getAddedBy().getUserId()
+							.equals(existItem.getCartProduct().getAddedBy().getUserId()))) {
+						sameVendor = false;
+						break;
+					}
+
+				}
+				map.put("message", "cart item saved successfully");
+			} else {
+				cartData = setCartDefaultData(cart.getCartUser(), city);
+			}
+			for (CartItem cartItem : cart.getCartItems()) {
+				if (sameVendor) {
+					Product cartProduct = productService.getObject(cartItem.getCartProduct().getId());
+
+					ProductCityDetails productCityDetails = productCityDetailsService
+							.getObjectByCityAndProduct(cartProduct.getId(), cityId);
+					cartItemObj = cartItemService.getCartItemByProduct(cartProduct.getId(), cartData.getId());
+					cartItem.setCartProduct(cartProduct);
+					param.productId = cartProduct.getId();
+					param.cityId = productCityDetails.getCity().getId();
+					List<ProductSizeDetail> productSizeDetails = productSizeService.getByProductAndCity(param);
+					productCityDetails.getProductCityId().setProductSizeDetail(new HashSet(productSizeDetails));
+
+					if (cartItemObj != null) {
+						// old cart item
+						productSizeItemService.deleteByCartItemId(cartItemObj.getId());
+						cartItemObj.setQuantity(cartItem.getQuantity());
+						// totalPrice = ProductDTO.getTotalAmountOfCementType(cartItem,
+						// cartItemObj.getQuantity(),
+						// productCityDetails, productService);
+						cartItemObj.setProductSizeItems(cartItem.getProductSizeItems());
+
+						if (cartItem.getProductSizeItems() != null && cartItem.getProductSizeItems().size() > 0) {
+							// cartItemObj.setProductSizeItems(cartItem.getProductSizeItems());
+							cartItemObj = productSizeItemService.saveProductSizeItemNCalculateAmount(cartItemObj,
+									productCityDetails, productService);
+						}
+						cartItemObj = cartItemService.updateExistingCartItem(cartData, productService, cartItemObj,
+								productCityDetails, discountService);
+
+						map.put("message", "cart item updated successfully");
+					} else {
+						// new cart item
+						cartItemObj = new CartItem();
+						// totalPrice = ProductDTO.getTotalAmountOfCementType(cartItem,
+						// cartItem.getQuantity(),productCityDetails, productService);
+						Set<ProductSizeItem> productSizeItems = cartItem.getProductSizeItems();
+						cartItemObj = cartItemService.updateExistingCartItem(cartData, productService, cartItem,
+								productCityDetails, discountService);
+
+						if (productSizeItems != null && productSizeItems.size() > 0) {
+							cartItemObj.setProductSizeItems(productSizeItems);
+							cartItemObj = productSizeItemService.saveProductSizeItemNCalculateAmount(cartItemObj,
+									productCityDetails, productService);
+						}
+
+						// cartItemService.saveOrUpdate(cartItemObj);
+
+						map.put("message", "cart item saved successfully");
+					}
+				} else {
+					map.put("message", "Please add product of same vendor");
+					return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(map);
+				}
+			}
+			// Cart cartObj = cartService.getObject(cartData.getId());
+			Double cartItemTotalAmount = cartItemService.getCartItemAmountSumByCart(cartData.getId());
+			Double cartItemTotalGstAmount = cartItemService.getCartItemGstAmoountSumByCart(cartData.getId());
+			Double cartItemTotalUnloadingCharge = cartItemService.getCartItemUnloadingChargeSumByCart(cartData.getId());
+			Double cartItemTotalTransportation = cartItemService.getCartItemTransportationByCart(cartData.getId());
+			Double cartItemTotalCommission = cartItemService.getCartItemCommissionByCart(cartData.getId());
+			Double totalDiscount = cartItemService.getCartItemDiscountByCart(cartData.getId());
+			if (cartItemTotalAmount != null) {
+				if (cartItemTotalUnloadingCharge != null) {
+					cartTotalAmount = cartItemTotalAmount + cartItemTotalUnloadingCharge;
+					cartData.setTotalUnloadingCharge(cartItemTotalUnloadingCharge);
+				}
+				if (cartItemTotalTransportation != null) {
+					cartTotalAmount = cartTotalAmount + cartItemTotalTransportation;
+					cartData.setTotalTransportation(cartItemTotalTransportation);
+				}
+				if (cartItemTotalGstAmount != null) {
+					cartData.setTotalGstAmount(cartItemTotalGstAmount);
+				}
+				if (cartItemTotalCommission != null) {
+					cartData.setTotalCommissin(cartItemTotalCommission);
+
+				}
+				if (totalDiscount != null) {
+					cartData.setDiscountedPrice(cartTotalAmount - totalDiscount);
+					cartData.setTotalDiscount(totalDiscount);
+					cartTotalAmount = cartTotalAmount - totalDiscount;
+
+				}
+			}
+			cartData.setTotalPrice(cartTotalAmount);
+			cartData.setSubTotalPrice(cartItemTotalAmount);
+
+			cartService.saveOrUpdate(cartData);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+
+		log.info("End of method addToCart");
+		return ResponseEntity.status(HttpStatus.OK).body(map);
+	}
+
+	private Cart setCartDefaultData(User user, City city) {
+
+		LocalDateTime createdOn = LocalDateTime.now();
+		Cart cartData = new Cart();
+		if (cartData.getSubTotalPrice() == null) {
+			cartData.setSubTotalPrice(0.00);
+		}
+		if (cartData.getTotalCargoPrice() == null) {
+			cartData.setTotalCargoPrice(0.00);
+		}
+		cartData.setCreatedOn(createdOn);
+		cartData.setTotalPrice(0.0);
+		cartData.setCartUser(user);
+		cartData.setTotalUnloadingCharge(0.00);
+		cartData.setTotalGstAmount(0.00);
+		cartData.setTotalCommissin(0.00);
+		cartData.setTotalTransportation(0.0);
+		cartData.setDiscountedPrice(0.0);
+		cartData.setTotalDiscount(0.0);
+		cartData.setCity(city);
+		cartService.saveOrUpdate(cartData);
+
+		return cartData;
+	}
+
+	@PostMapping("/updateCart/{cityId}")
+	public ResponseEntity<Map<String, Object>> updateCartItem(@RequestBody CartItem cartItem,
+			@PathVariable("cityId") Long cityId) {
+		Map<String, Object> map = new HashMap<String, Object>();
+		double totalPrice = 0;
+		double totalProductAmount = 0;
+		try {
+			CartItem cartItemData = cartItemService.getObject(cartItem.getId());
+			Cart cartObj = cartService.getObject(cartItemData.getCart().getId());
+			ProductCityDetails productCityDetails = productCityDetailsService
+					.getObjectByCityAndProduct(cartItemData.getCartProduct().getId(), cityId);
+			if (cartItem.getQuantity() != null && productCityDetails.getSelling_price() != null)
+				totalProductAmount = productCityDetails.getSelling_price() * cartItem.getQuantity();
+			if (cartItemData != null && ((cartItem.getQuantity() >= productCityDetails.getMinimum_quantity())
+					|| totalProductAmount >= productCityDetails.getMinimum_order_price())) {
+				cartItemData.setAmount(totalProductAmount);
+				cartItemData.setQuantity(cartItem.getQuantity());
+				// totalPrice = ProductDTO.getTotalAmountOfCementType(cartItemData,
+				// cartItem.getQuantity(),productCityDetails, productService);
+				if (cartItem.getProductSizeItems() != null && cartItem.getProductSizeItems().size() > 0) {
+					cartItemData.setProductSizeItems(cartItem.getProductSizeItems());
+					cartItemData = productSizeItemService.saveProductSizeItemNCalculateAmount(cartItemData,
+							productCityDetails, productService);
+				}
+				cartItemData = cartItemService.updateExistingCartItem(cartObj, productService, cartItemData,
+						productCityDetails, discountService);
+//				cartItemData.setCart(cartObj);
+				cartItemService.saveOrUpdate(cartItemData);
+				try {
+
+					Double cartItemTotalAmount = cartItemService
+							.getCartItemAmountSumByCart(cartItemData.getCart().getId());
+					Double cartItemTotalGstAmount = cartItemService
+							.getCartItemGstAmoountSumByCart(cartItemData.getCart().getId());
+					Double cartItemTotalUnloadingCharge = cartItemService
+							.getCartItemUnloadingChargeSumByCart(cartItemData.getCart().getId());
+
+					Double cartItemTotalCommission = cartItemService
+							.getCartItemCommissionByCart(cartItemData.getCart().getId());
+
+					Double cartItemTotalTransportation = cartItemService
+							.getCartItemTransportationByCart(cartItemData.getCart().getId());
+
+					Double totalDiscount = cartItemService.getCartItemDiscountByCart(cartItemData.getCart().getId());
+
+					Double cartTotalAmount = cartItemTotalAmount + cartItemTotalUnloadingCharge
+							+ cartItemTotalTransportation;
+					cartObj.setTotalGstAmount(cartItemTotalGstAmount);
+					cartObj.setTotalUnloadingCharge(cartItemTotalUnloadingCharge);
+					cartObj.setTotalCommissin(cartItemTotalCommission);
+					cartObj.setTotalTransportation(cartItemTotalTransportation);
+					cartObj.setTotalPrice(cartTotalAmount);
+					cartObj.setSubTotalPrice(cartItemTotalAmount);
+					if (totalDiscount != null) {
+						cartObj.setDiscountedPrice(cartTotalAmount - totalDiscount);
+						cartObj.setTotalDiscount(totalDiscount);
+					}
+
+					cartService.saveOrUpdate(cartObj);
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+				map.put("message", "cart item updated successfully");
+			}
+			// }
+
+		} catch (
+
+		Exception ex) {
+			ex.printStackTrace();
+		}
+//		map.put("cartItem", cartItemObj);
+		return ResponseEntity.status(HttpStatus.OK).body(map);
+
+	}
+
+	@RequestMapping(value = "/removefromcart", method = RequestMethod.POST)
+	public @ResponseBody Map<String, Object> removeFromCart(@RequestBody CartItem cartItem, HttpServletRequest request,
+			HttpServletResponse response) {
+		log.info("Start of method removeFromCart");
+		Map<String, Object> map = new HashMap<String, Object>();
+		CartItem cartItemObj = cartItemService.getObject(cartItem.getId());
+		Cart cart = cartService.getObject(cartItemObj.getCart().getId());
+		if (cart != null) {
+			cart.setTotalPrice(cart.getTotalPrice() - (cartItemObj.getAmount() + cartItemObj.getUnloading_charge()
+					+ cartItemObj.getTransportation_charge()));
+			if (cartItemObj.getDiscounted_amount() > 0.0) {
+				cart.setDiscountedPrice(cart.getDiscountedPrice() - cartItemObj.getDiscounted_amount());
+				cart.setTotalDiscount(cart.getTotalDiscount() - cartItemObj.getDiscount());
+				cart.setTotalPrice(cart.getTotalPrice() + cartItemObj.getDiscount());
+			}
+			cart.setTotalGstAmount(cart.getTotalGstAmount() - cartItemObj.getGst_amount());
+			cart.setTotalUnloadingCharge(cart.getTotalUnloadingCharge() - cartItemObj.getUnloading_charge());
+			cart.setTotalTransportation(cart.getTotalTransportation() - cartItemObj.getTransportation_charge());
+			cart.setTotalCommissin(cart.getTotalCommissin() - cartItemObj.getCommission());
+
+			cart.setSubTotalPrice(cart.getSubTotalPrice() - cartItemObj.getAmount());
+			cartService.saveOrUpdate(cart);
+		}
+		cartItemService.delete(cartItem);
+		productSizeItemService.deleteByCartItemId(cartItem.getId());
+
+		map.put("message", "cart item deleted successfully");
+		log.info("End of method removeFromCart");
+		return map;
+	}
+
+	@GetMapping("/cartlistByUser/{cityId}")
+	public ResponseEntity<Map<String, Object>> getCartByUser(
+			@RequestParam(value = "userId", required = false) Long userId, @PathVariable("cityId") Long cityId,
+			HttpServletRequest request, HttpServletResponse response) {
+		log.info("Start of method getCartByUser");
+		Map<String, Object> map = new HashMap<String, Object>();
+		CartDTO cartDTO = new CartDTO();
+		ArrayList<Cart> carts = new ArrayList<Cart>();
+		carts = (ArrayList<Cart>) cartService.findCartByUser(userId, cityId);
+		map.put("carts", cartDTO.ObjectToCart(carts));
+		log.info("End of method getCartByUser");
+		return ResponseEntity.status(HttpStatus.OK).body(map);
+
+	}
+
+}

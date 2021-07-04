@@ -1,0 +1,219 @@
+package com.commerce.backend.model;
+
+import java.time.LocalDateTime;
+import java.util.Set;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
+
+@Entity
+@Table(name = "CART")
+public class Cart {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.AUTO)
+	@Column(name = "ID")
+	private Long id;
+
+	@ManyToOne
+	@JoinColumn(name = "USER_ID")
+	@JsonIgnore
+	private User cartUser;
+
+	@OneToMany(mappedBy = "cart", cascade = CascadeType.DETACH, fetch = FetchType.EAGER, orphanRemoval = true)
+	private Set<CartItem> cartItems;
+
+//	@ManyToOne
+//	@JoinColumn(name = "DISCOUNT_ID")
+//	private ProductDiscountDetails discount;
+
+	@Column(name = "TOTAL_PRICE", columnDefinition = "Decimal(10,2) default '0.00'")
+	@NotNull
+	private Double totalPrice;
+
+	@Column(name = "SUBTOTAL_PRICE", columnDefinition = "Decimal(10,2) default '0.00'")
+	@NotNull
+	private Double subTotalPrice;
+
+	@Column(name = "DISCOUNTED_PRICE", columnDefinition = "Decimal(10,2) default '0.00'")
+	@NotNull
+	private Double discountedPrice;
+
+	@Column(name = "TOTAL_CARGO_PRICE")
+//    @NotNull
+	private Double totalCargoPrice;
+
+	@Column(name = "CREATED_ON")
+//    @JsonIgnore
+	private LocalDateTime createdOn;
+
+	@Column(name = "TOTAL_UNLOADING_CHARGE", columnDefinition = "Decimal(10,2) default '0.00'")
+	@NotNull
+	private Double totalUnloadingCharge;
+
+	@Column(name = "TOTAL_GST_AMOUNT", columnDefinition = "Decimal(10,2) default '0.00'")
+	@NotNull
+	private Double totalGstAmount;
+
+	@Column(name = "TOTAL_COMMSSION", columnDefinition = "Decimal(10,2) default '0.00'")
+	private Double totalCommissin;
+
+	@Column(name = "TOTAL_TRANSPORTATION", columnDefinition = "Decimal(10,2) default '0.00'")
+	private Double totalTransportation;
+
+	@Column(name = "TOTAL_DISCOUNTED", columnDefinition = "Decimal(10,2) default '0.00'")
+	private Double totalDiscount;
+
+	private String cookieId;
+
+	@ManyToOne // TODO one to many ??? many to many????
+	@JoinColumn(name = "CITY_ID")
+	private City city;
+
+	@Column(name = "ORDER_ID")
+	private String orderId;
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public User getCartUser() {
+		return cartUser;
+	}
+
+	@JsonProperty(access = Access.WRITE_ONLY)
+	public void setCartUser(User cartUser) {
+		this.cartUser = cartUser;
+	}
+
+	public Set<CartItem> getCartItems() {
+		return cartItems;
+	}
+
+	public void setCartItems(Set<CartItem> cartItems) {
+		this.cartItems = cartItems;
+	}
+
+	public Double getTotalPrice() {
+		return totalPrice;
+	}
+
+	public void setTotalPrice(Double totalPrice) {
+		this.totalPrice = totalPrice;
+	}
+
+	public Double getTotalCargoPrice() {
+		return totalCargoPrice;
+	}
+
+	public void setTotalCargoPrice(Double totalCargoPrice) {
+		this.totalCargoPrice = totalCargoPrice;
+	}
+
+	public LocalDateTime getCreatedOn() {
+		return createdOn;
+	}
+
+	public void setCreatedOn(LocalDateTime createdOn) {
+		this.createdOn = createdOn;
+	}
+
+	public String getCookieId() {
+		return cookieId;
+	}
+
+	public void setCookieId(String cookieId) {
+		this.cookieId = cookieId;
+	}
+
+	public Double getSubTotalPrice() {
+		return subTotalPrice;
+	}
+
+	public void setSubTotalPrice(Double subTotalPrice) {
+		this.subTotalPrice = subTotalPrice;
+	}
+
+	public Double getTotalUnloadingCharge() {
+		return totalUnloadingCharge;
+	}
+
+	public void setTotalUnloadingCharge(Double totalUnloadingCharge) {
+		this.totalUnloadingCharge = totalUnloadingCharge;
+	}
+
+	public Double getTotalGstAmount() {
+		return totalGstAmount;
+	}
+
+	public void setTotalGstAmount(Double totalGstAmount) {
+		this.totalGstAmount = totalGstAmount;
+	}
+
+	public City getCity() {
+		return city;
+	}
+
+	public void setCity(City city) {
+		this.city = city;
+	}
+
+	public Double getTotalCommissin() {
+		return totalCommissin;
+	}
+
+	public void setTotalCommissin(Double totalCommissin) {
+		this.totalCommissin = totalCommissin;
+	}
+
+	public Double getTotalTransportation() {
+		return totalTransportation;
+	}
+
+	public void setTotalTransportation(Double totalTransportation) {
+		this.totalTransportation = totalTransportation;
+	}
+
+	public String getOrderId() {
+		return orderId;
+	}
+
+	public void setOrderId(String orderId) {
+		this.orderId = orderId;
+	}
+
+	public Double getDiscountedPrice() {
+		return discountedPrice;
+	}
+
+	public void setDiscountedPrice(Double discountedPrice) {
+		this.discountedPrice = discountedPrice;
+	}
+
+	public Double getTotalDiscount() {
+		return totalDiscount;
+	}
+
+	public void setTotalDiscount(Double totalDiscount) {
+		this.totalDiscount = totalDiscount;
+	}
+
+}

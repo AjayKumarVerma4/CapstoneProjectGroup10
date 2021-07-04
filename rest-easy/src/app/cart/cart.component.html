@@ -1,0 +1,71 @@
+<main class="page ">
+    <section class="shopping-cart dark ">
+        <div class="container ">
+            <div class="block-heading ">
+                <h2>Shopping Cart</h2>
+                <!-- <p>We have tried many quotation plugins and this is the best in the market! Full of detail features and very well implemented. Overall great plugin and most importantly, great support team too! Best choice ever with no regrets!</p>
+             -->
+            </div>
+            <div class="content ">
+                <div class="row ">
+                    <div class="col-md-12 col-lg-8 ">
+                        <div class="items " *ngFor="let obj of cartDTOItemArray">
+
+
+                             <div class="product ">
+                                <div class="row ">
+                                    <div class="col-md-3" style="padding:20px">
+                                        <img class="img-fluid mx-auto d-block image" src={{obj.imageUrl}}>
+                                    </div>
+                                    <div class="col-md-8 ">
+                                        <div class="info ">
+                                            <div class="row ">
+                                                <div class="col-md-5 product-name ">
+                                                    <div class="product-name ">
+                                                        <a href="# ">{{obj.foodName}}</a>
+                                                        <div class="product-info ">
+                                                            <div>Price: <span class="value ">{{obj.foodPrice}}</span></div>
+                                                            <div>Restaurant Name: <span class="value ">{{obj.restaurentName}}</span></div>
+                                                            <div>Food Category: <span class="value ">{{obj.foodCategeory}}</span></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4 quantity ">
+                                                    <label for="quantity ">Quantity:</label><br/>
+                                                    <button class="fa fa-minus text-danger" style="margin:3px;"></button>
+                                                    <span class="form-control quantity-input">1</span>
+                                                    <button class="fa fa-plus text-success" style="margin:3px;"></button> </div>
+                                                <div class="col-md-2 price ">
+                                                    <span>Rs.{{obj.foodPrice}}</span>
+                                                </div>
+                                                <div class="col-md-1 price ">
+                                                    <span><button class="btn btn-danger"><i class="fa fa-trash mb-1"></i></button></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div> 
+                            
+
+                        </div>
+                    </div>
+                    <div class="col-md-12 col-lg-4 ">
+                        <div class="summary ">
+                            <h3>Order Summary</h3>
+                            <div class="summary-item "><span class="text ">Total Quantity</span><span class="price ">{{totalqty}}</span></div>
+                            <div class="summary-item "><span class="text ">GST Percentage</span><span class="price ">0%</span></div>
+                            <div class="summary-item "><span class="text ">Sub Total</span><span class="price ">Rs. 0</span></div>
+                            <div class="summary-item "><span class="text ">GST Price</span><span class="price ">Rs. 0</span></div>
+                            <div class="summary-item "><span class="text ">Free Delivery</span></div>
+                            <div class="summary-item" style="margin:15px"><span class="text ">Total</span><span class="price ">Rs. {{totalPrice}}</span></div>
+                            <button type="button" routerLink="/checkout" class="btn btn-info btn-lg btn-block ">Checkout</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+<script src="https://code.jquery.com/jquery-3.2.1.min.js "></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js "></script>

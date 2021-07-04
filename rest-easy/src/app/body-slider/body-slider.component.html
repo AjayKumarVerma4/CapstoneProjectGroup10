@@ -1,0 +1,11 @@
+<div style="margin:0px 20px 40px 20px">
+    <div class="carousel" data-flickity='{ "wrapAround": true, "autoPlay": true, "imagesLoaded":true }'>
+        <div class="carousel-cell" *ngFor="let obj of arr">
+            <img class="w3-image" src={{obj.imageURL}}>
+            <div class="carousel-caption d-none d-md-block">
+                <h5>{{obj.header}}</h5>
+                <p>{{obj.content}}</p>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,30 @@
+.navbar-custom {
+    color: #CC3333;
+    background-color: #9132a8;
+}
+
+.btn-space {
+    margin-right: 10px;
+}
+
+.navbar-brand {
+    color: #42f5c8;
+    font-size: 30px;
+    font-family: "candara";
+}
+
+a:hover {
+    color: white;
+}
+
+a {
+    font-size: 18px;
+}
+
+.nav-link {
+    color: #FFFFFF;
+}
+
+.bgcolor {
+    background-color: black;
+}

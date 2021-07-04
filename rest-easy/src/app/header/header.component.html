@@ -1,0 +1,57 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-info">
+    <a class="navbar-brand" href="#">RESTEASY</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav mr-auto" *ngFor="let obj of restList">
+            <li class="nav-item dropdown"  routerLink="/menuByRestaurant/{{obj.restaurentId}}">
+                {{obj.restaurentName}}
+                
+                <!-- <a class="nav-link text-dark dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          {{obj.restaurentName}}
+        </a> -->
+                <!-- <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                    <a class="dropdown-item" href="#">AdiGasb</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="#">RotiGharc</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="#">PunjabiRasoid</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="#">Udup</a>
+                </div> -->
+            </li>
+        </ul>
+        <div style="margin:7px;">
+            <a routerLink="cart">
+                <!-- <span class="span1">{{total_foodPrice | currency:'INR'}}</span>
+                <span class="span2">{{total_foodPrice}}</span>&nbsp; -->
+            <i class="bi bi-cart">
+        <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-cart" viewBox="0 0 16 16">
+            <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM3.102 4l1.313 7h8.17l1.313-7H3.102zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+          </svg></i>
+        </a>
+        </div>
+
+        <div class="col-12 col-lg-auto mb-2 mb-lg-0" style="margin-right: 5px;">
+            <input type="search" class="form-control" placeholder="Search..." aria-label="Search">
+        </div>
+        <div class="text-end">
+            <button type="button" class="btn btn-light text-dark me-2">Search</button>
+        </div>
+        &nbsp;&nbsp;
+
+        <ng-container *ngIf="enableProp != 1; else elseBlock">
+           
+            <button type="button" class="btn btn-default btn-space navbar-btn navbar-right" routerLink="registration">Sign up</button>
+            <button type="button" class="btn btn-default btn-space navbar-btn navbar-right" routerLink="login">Sign in</button>
+    
+        </ng-container>
+        <ng-template #elseBlock>
+            <p style="color: white; padding-top:4vh; padding-right: 0px;">Welcome: {{loginSuccess}}</p>
+            <button type="button" class="btn btn-default btn-space navbar-btn navbar-right" routerLink="" (click)="onLogout()">Logout</button>
+        </ng-template>
+
+    </div>
+</nav>
+

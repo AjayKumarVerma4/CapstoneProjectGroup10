@@ -1,0 +1,10 @@
+.own {
+    width: 100%;
+    margin: 26px;
+}
+
+.column {
+    width: 20rem;
+    float: left;
+    margin: 15px;
+}
